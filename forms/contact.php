@@ -1,41 +1,54 @@
 <?php
-  /**
-  * Requires the "PHP Email Form" library
-  * The "PHP Email Form" library is available only in the pro version of the template
-  * The library should be uploaded to: vendor/php-email-form/php-email-form.php
-  * For more info and help: https://bootstrapmade.com/php-email-form/
-  */
-
-  // Replace contact@example.com with your real receiving email address
-  $receiving_email_address = 'carlosguevara.villar@gmail.com';
-
-  if( file_exists($php_email_form = '../assets/vendor/php-email-form/php-email-form.php' )) {
-    include( $php_email_form );
-  } else {
-    die( 'Unable to load the "PHP Email Form" Library!');
-  }
-
-  $contact = new PHP_Email_Form;
-  $contact->ajax = true;
-  
-  $contact->to = $receiving_email_address;
-  $contact->from_name = $_POST['name'];
-  $contact->from_email = $_POST['email'];
-  $contact->subject = $_POST['subject'];
-
-  // Uncomment below code if you want to use SMTP to send emails. You need to enter your correct SMTP credentials
-  
- //$contact->smtp = array(
- //  'host' => 'crsmart.cl',
- //  'username' => 'cguevara@crsmart.cl',
- //  'password' => 'cguevara*_*2025',
- //  'port' => '587'
- //);
-  
-
-  $contact->add_message( $_POST['name'], 'From');
-  $contact->add_message( $_POST['email'], 'Email');
-  $contact->add_message( $_POST['message'], 'Message', 10);
-
-  echo $contact->send();
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
+ini_set('display_errors','On');
+$disabled = explode(',', ini_get('disable_functions'));
+if(in_array('mail', $disabled)) die("mail function is disabled on this server");
+$debug = true; //change value to false once the form is working
+$errors = '';
+$myemail = 'carlosguevara.villar@yahoo.com';//<-----Put Your email address here.
+if(isset($_POST['name']))
+    {
+        
+    if(empty($_POST['name'])  ||
+       empty($_POST['email']) ||
+       empty($_POST['message']))
+    {
+        $errors .= "\n Error: all fields are required";
+    }
+    
+    if( empty($errors))
+    {
+    
+        $name = $_POST['name'];
+        $email_address = $_POST['email'];
+        $message = $_POST['message'];
+        
+        if (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/i",$email_address))
+        {
+            $errors .= "\n Error: Invalid email address";
+        }
+        
+        if( empty($errors))
+        {
+            $to = $myemail;
+            $email_subject = "Contact form submission: $name";
+            $email_body = "You have received a new message. ".
+            " Here are the details:\n Name: $name \n Email: $email_address \n Message \n $message";
+        
+            $headers = "From: $myemail\n";
+            $headers .= "Reply-To: $email_address";
+            
+            $send = (function_exists('mail')) ? @mail($to,$email_subject,$email_body,$headers) : false;
+            if($send) {
+                //redirect to the 'thank you' page
+                header('Location: contact-form-thank-you.html');
+                exit;
+            } else {
+                if($debug) phpinfo();
+                else $errors .= 'Server error: Please report to the webmaster';
+                exit;    
+            }
+        }
+    }
+} //end isset name
 ?>
